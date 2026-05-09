@@ -1,0 +1,98 @@
+"""
+Módulo de servicios especializados. Implementa las clases Sala, Equipo y Asesoria
+que heredan de Servicio y sobrescriben calcular_costo() y describir().
+"""
+
+from base import Servicio, InvalidDataError, logger
+from typing import Any
+
+
+class Sala(Servicio):
+    """Reserva de salas (tarifa por hora, capacidad)."""
+
+    def __init__(self, nombre: str, descripcion: str, tarifa_hora: float, capacidad: int) -> None:
+        super().__init__(nombre, descripcion, tarifa_hora)
+        if capacidad <= 0:
+            msg = f"La capacidad debe ser positiva para la sala '{nombre}'."
+            logger.error(msg)
+            raise InvalidDataError(msg)
+        self.capacidad = capacidad
+
+    def calcular_costo(self, horas: float, impuesto: float = 0.0) -> float:
+        if horas <= 0:
+            msg = f"La duración en horas debe ser positiva para la sala '{self.nombre}'."
+            logger.error(msg)
+            raise InvalidDataError(msg)
+        costo = self.costo_base * horas
+        costo += costo * impuesto
+        logger.debug(
+            f"Sala '{self.nombre}' – horas: {horas}, impuesto: {impuesto}, total: {costo}"
+        )
+        return costo
+
+    def describir(self) -> str:
+        return f"Sala '{self.nombre}' (capacidad {self.capacidad}). Tarifa por hora: {self.costo_base}"
+
+
+class Equipo(Servicio):
+    """Alquiler de equipos (tarifa por hora, depósito)."""
+
+    def __init__(
+        self,
+        nombre: str,
+        descripcion: str,
+        tarifa_hora: float,
+        tipo_equipo: str,
+        deposito: float,
+    ) -> None:
+        super().__init__(nombre, descripcion, tarifa_hora)
+        if deposito < 0:
+            msg = f"El depósito no puede ser negativo para el equipo '{nombre}'."
+            logger.error(msg)
+            raise InvalidDataError(msg)
+        self.tipo_equipo = tipo_equipo
+        self.deposito = deposito
+
+    def calcular_costo(self, horas: float, descuento: float = 0.0) -> float:
+        if horas <= 0:
+            msg = f"Las horas deben ser positivas para el equipo '{self.nombre}'."
+            logger.error(msg)
+            raise InvalidDataError(msg)
+        costo = self.costo_base * horas
+        if descuento:
+            costo -= costo * descuento
+        total = costo + self.deposito
+        logger.debug(
+            f"Equipo '{self.nombre}' – horas: {horas}, descuento: {descuento}, depósito: {self.deposito}, total: {total}"
+        )
+        return total
+
+    def describir(self) -> str:
+        return f"Equipo '{self.nombre}' (tipo: {self.tipo_equipo}). Tarifa por hora: {self.costo_base}, depósito: {self.deposito}"
+
+
+class Asesoria(Servicio):
+    """Asesorías especializadas (por sesión)."""
+
+    def calcular_costo(
+        self,
+        sesiones: int,
+        impuesto: float = 0.0,
+        descuento: float = 0.0,
+    ) -> float:
+        if sesiones <= 0:
+            msg = f"El número de sesiones debe ser positivo para la asesoría '{self.nombre}'."
+            logger.error(msg)
+            raise InvalidDataError(msg)
+        costo = self.costo_base * sesiones
+        if descuento:
+            costo -= costo * descuento
+        if impuesto:
+            costo += costo * impuesto
+        logger.debug(
+            f"Asesoría '{self.nombre}' – sesiones: {sesiones}, descuento: {descuento}, impuesto: {impuesto}, total: {costo}"
+        )
+        return costo
+
+    def describir(self) -> str:
+        return f"Asesoría '{self.nombre}'. Tarifa por sesión: {self.costo_base}"
